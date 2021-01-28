@@ -256,13 +256,13 @@ const pubsub = new PubSub();
 const googleProjectId = process.env.GoogleProjectId;
 ```
 
-1. Creating cloud functions to stream data to an ingestion pipeline
+2. Creating cloud functions to stream data to an ingestion pipeline
 2. Open Google Cloud SDK Shell and navigate to the directory where the Node.js scripts were cloned  
     `cd <path to cloned directory>`
-3. To set/change the project property in the core section, run:  
+2. To set/change the project property in the core section, run:  
    `gcloud config set project my-project`
 
-4. Next, we will deploy two cloud functions to handle data injection from Catchpoint. We will be leveraging Pub/Sub, an asynchronous messaging service that decouples services that produce events from services that process events. Refer to [https://cloud.google.com/pubsub/docs/overview](https://cloud.google.com/pubsub/docs/overview) for understanding more about how these functions are useful.
+2. Next, we will deploy two cloud functions to handle data injection from Catchpoint. We will be leveraging Pub/Sub, an asynchronous messaging service that decouples services that produce events from services that process events. Refer to [https://cloud.google.com/pubsub/docs/overview](https://cloud.google.com/pubsub/docs/overview) for understanding more about how these functions are useful.
 
 # REWORK THIS SECTION
 In this integration, we are using Catchpoint's ability to push data to a webhook.  This is the recommended approach for ingesting Catchpoint data into Cloud monitoring as it gives you the flexibility of adapting to new metrics being added on Catchpoint side and also ensure you get data in real time from the Catchpoint platform.
