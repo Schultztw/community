@@ -58,10 +58,10 @@ Before App Engine deployment, a Pub/Sub topic is needed to receive and distribut
 [How to create a Topic](https://cloud.google.com/pubsub/docs/quickstart-console#create_a_topic)
 
 1. Create a Publisher topic
-![create-pub-topic](create-pub-topic.png)
+    ![create-pub-topic](create-pub-topic.png)
 
 1. Create a Subscription to receive messages
-![create-subscription](create-subscription.png)
+    ![create-subscription](create-subscription.png)
 
 ##### Build a Webhook in GCP
 
@@ -171,9 +171,9 @@ After the GCP ingestion pipeline is built, CatchPoint tests must be configured t
 1. Select **Add Url** under **Test Data Webhook**  
 ![webhook-new](webhook-new.png)
 
-    i. Under "URL" add the url for the webhook application created in the previous section
-    ii. Under "Format" select "Template Radio Button"
-    iii. Click "Select Template"
+    i. Under "URL" add the url for the webhook application created in the previous section  
+    ii. Under "Format" select "Template Radio Button"  
+    iii. Click "Select Template"  
     iv. Click "Add New"  
     ![webhook-configure-template](webhook-configure-template.png)
 
