@@ -13,7 +13,7 @@ This guide walks through multiple approaches for ingesting Catchpoint data into 
 ## Catchpoint Supported Test Types
 
 - Synthetic Monitoring from any location
-  - Create transactional tests to replicate [Real User Monitoring](https://en.wikipedia.org/wiki/Real_user_monitoring#:~:text=Real%20user%20monitoring%20(RUM)%20is,server%20or%20cloud%2Dbased%20application.&text=The%20data%20may%20also%20be,intended%20effect%20or%20cause%20errors).
+  - Create transactional tests to replicate user workflows. This augments the passive [Real User Monitoring](https://en.wikipedia.org/wiki/Real_user_monitoring#:~:text=Real%20user%20monitoring%20(RUM)%20is,server%20or%20cloud%2Dbased%20application.&text=The%20data%20may%20also%20be,intended%20effect%20or%20cause%20errors).
 - Network Layer Tests from any location
   - Layer 3 (traceroute, ping), Layer 4 (TCP, UDP), DNS and BGP.
 
@@ -21,10 +21,8 @@ For more information, please refer to the [Catchpoint Platform](https://www.catc
 
 This guide highlights two approaches to consume the Catchpoint test data within GCP
 
-# Need to fix these links, share the files
-
-1. [Creating a GCP Data Ingestion Pipeline for Catchpoint Test data](https://docs.google.com/document/d/1KuIc-A45aFJ3eK-Rm46nyf_bsR_TvPD2MhXU9Qd_Z_U/edit?ts=600b384e#heading=h.96l8hfgcpy6x)
-2. [Catchpoint and Cloud Monitoring Integration](https://docs.google.com/document/d/1KuIc-A45aFJ3eK-Rm46nyf_bsR_TvPD2MhXU9Qd_Z_U/edit?ts=600b384e#heading=h.p33702x5820f)
+1. [Creating a GCP Data Ingestion Pipeline for Catchpoint Test data](#creating-a-gcp-data-ingestion-pipeline-for-catchpoint-test-data)
+2. [Catchpoint and Cloud Monitoring Integration](#catchpoint-and-cloud-monitoring-integration)
 
 ## Creating a GCP Data Ingestion Pipeline for Catchpoint Test Data
 
@@ -35,19 +33,18 @@ This guide highlights two approaches to consume the Catchpoint test data within 
 The steps from Catchpoint to Grafana
 
 1. Catchpoint sends data via a predefined webhook. The template is configured within the Catchpoint portal (see next section for more details)
-2. Webhook runs in GCP using App Engine. **THIS IS WEIRD and i don't know what it means**
+2. An HTTP webhook is set up in GCP using App Engine to ingest Catchpoint data. 
 3. App Engine uses [Pub-Sub](https://cloud.google.com/pubsub) to propagate data to configured channels.
 4. A [Dataflow](https://cloud.google.com/dataflow/) job listens to the Pub/Sub channel and inserts the a BigQuery accessible dataset.
-5. Data is processed to match the Catchpoint Schema and sent to [BigQuery](https://cloud.google.com/bigquery).
-6. Grafana uses a BigQuery data source to visualize the data.
+5. Data is processed sent to [BigQuery](https://cloud.google.com/bigquery) along with the Catchpoint schema.
+6. Grafana has a BigQuery plugin that can be used as a data source to visualize the data.
 
 ### Configuration Details
 
 This section covers each configuration step with further explanations to set up each component and example scripts. The configuration details describes two main tasks
 
-# Need to fix these links, share the files
-1. [GCP Pipeline Setup](https://docs.google.com/document/d/1KuIc-A45aFJ3eK-Rm46nyf_bsR_TvPD2MhXU9Qd_Z_U/edit?ts=600b384e#heading=h.ytup525q5dqj)
-1. [Creating the Catchpoint Setup](https://docs.google.com/document/d/1KuIc-A45aFJ3eK-Rm46nyf_bsR_TvPD2MhXU9Qd_Z_U/edit?ts=600b384e#heading=h.xpxkt04y4bh4)
+1. [GCP Pipeline Setup](#gcp-pipeline-setup)
+2. [Catchpoint Setup](#catchpoint-setup)
 
 #### GCP Pipeline Setup
 
@@ -84,8 +81,6 @@ CatchpointPushURL: <URL> # in this example it is /cppush
 Once the Pub/Sub topics are setup and data is flowing, BigQuery needs the data to run analytics. Before the pipeline can be created, the BigQuery table needs to be setup.
 
 [How to create a BigQuery table](https://cloud.google.com/bigquery/docs/tables)
-
-##### Create a BigQuery dataset
 
 ![create-big-query](create-big-query.png)
 
@@ -161,7 +156,7 @@ Grafana offers a plugin for BigQuery as a data source. Step by step instructions
 
 #### Catchpoint setup
 
-After the GCP ingestion pipeline is built, CatchPoint tests must be configured to post data to the GCP webhook.
+After the GCP ingestion pipeline is built, Catchpoint tests must be configured to post data to the GCP webhook.
 
 ##### Create a Catchpoint WebHook
 
@@ -238,127 +233,126 @@ The Monitoring API must be enabled and have authorized users. Follow the steps i
 1. Enable Cloud Functions  
 Follow the steps in [Cloud Pub/Sub Tutorial | Cloud Functions Documentation](https://cloud.google.com/functions/docs/tutorials/pubsub) to enable the use of Cloud Functions and Cloud Pub/Sub APIs. This tutorial leverages Node.js. The referenced guide contains information to setup your development environment.
 
-##### GCP data pipeline setup
-
-1. Clone the Catchpoint Stackdriver integration repository to your local machine from [here](https://github.com/catchpoint/Integrations.GoogleCloudMonitoring). In this example, we will be using the push model to ingest data from Catchpoint to Cloud Monitoring. The Stackdriver-Webhook folder has the required Node.js script to set up the ingestion of data and writing of data to Cloud monitoring.  
+1. GCP data pipeline setup
+    1. Clone the Catchpoint Stackdriver integration repository to your local machine from [here](https://github.com/catchpoint/Integrations.GoogleCloudMonitoring). In this example, we will be using the push model to ingest data from Catchpoint to Cloud Monitoring. The Stackdriver-Webhook folder has the required Node.js script to set up the ingestion of data and writing of data to Cloud monitoring.  
 Update the GoogleProjectId to the Project Id from above in the [.env file](https://github.com/catchpoint/Integrations.GoogleCloudMonitoring/blob/master/Stackdriver-Webhook/.env). Refer to [Using Environment Variables | Cloud Functions Documentation](https://cloud.google.com/functions/docs/env-var) for information on how to set up environment variables.
 
-   `index.js` snippet to set the Google Project Id.  
+       `index.js` snippet to set the Google Project Id.  
 
-    ```javascript
-    'use strict';
-    const monitoring = require('@google-cloud/monitoring');
-    const { PubSub } = require('@google-cloud/pubsub');
-    const path = require('path')
-    const dotenv = require('dotenv')
-    dotenv.config({ path: path.join(\_\_dirname, '.env') });
-    const pubsub = new PubSub();
-    const googleProjectId = process.env.GoogleProjectId;
-    ```
+        ```javascript
+        'use strict';
+        const monitoring = require('@google-cloud/monitoring');
+        const { PubSub } = require('@google-cloud/pubsub');
+        const path = require('path')
+        const dotenv = require('dotenv')
+        dotenv.config({ path: path.join(\_\_dirname, '.env') });
+        const pubsub = new PubSub();
+        const googleProjectId = process.env.GoogleProjectId;
+        ```
 
-1. Creating cloud functions to stream data to an ingestion pipeline
-2. Open Google Cloud SDK Shell and navigate to the directory where the Node.js scripts were cloned  
-    `cd <path to cloned directory>`
-3. To set/change the project property in the core section, run:  
-   `gcloud config set project my-project`
+##### Creating cloud functions to stream data to an ingestion pipeline
 
-4. Next, we will deploy two cloud functions to handle data injection from Catchpoint. We will be leveraging Pub/Sub, an asynchronous messaging service that decouples services that produce events from services that process events. Refer to [https://cloud.google.com/pubsub/docs/overview](https://cloud.google.com/pubsub/docs/overview) for understanding more about how these functions are useful.
+1. Open Google Cloud SDK Shell and navigate to the directory where the Node.js scripts were cloned  
+`cd <path to cloned directory>`
 
-# REWORK THIS SECTION
-In this integration, we are using Catchpoint's ability to push data to a webhook.  This is the recommended approach for ingesting Catchpoint data into Cloud monitoring as it gives you the flexibility of adapting to new metrics being added on Catchpoint side and also ensure you get data in real time from the Catchpoint platform.
+1. To set/change the project property in the core section, run:  
+`gcloud config set project my-project`
 
-###### TIP: Using Catchpoint REST APIs
+1. Next, we will deploy two cloud functions to handle data injection from Catchpoint. We will be leveraging Pub/Sub, an asynchronous messaging service that decouples services that produce events from services that process events. Refer to [https://cloud.google.com/pubsub/docs/overview](https://cloud.google.com/pubsub/docs/overview) for understanding more about how these functions are useful.
 
-_In case you need to leverage the PULL model to integrate with Catchpoint, you can look at the example that leverages Catchpoint REST APIs in the Github repository_ [_here_](https://github.com/catchpoint/Integrations.GoogleCloudMonitoring)_. The catchpoint-rest-api.js has the code to leverage the Catchpoint performance API to pull data from Catchpoint. If you use this approach, you can skip the cloud function step up and go over to the Cloud Monitoring Set Up._
+    In this integration, we are using Catchpoint's ability to push data to a webhook.  This is the recommended approach for ingesting Catchpoint data into Cloud monitoring as it gives you the flexibility of adapting to new metrics being added on Catchpoint side and also ensure you get data in real time from the Catchpoint platform.  
 
-1. HTTP triggers are used to invoke cloud functions with an HTTP request. Additional information is available [here](https://cloud.google.com/functions/docs/calling/http).  
-The publish function gets triggered by a HTTP POST from Catchpoint. This function then publishes to the topic specified while deploying the subscriber.
+     _**TIP:** Using Catchpoint REST APIs_
 
-###### The Publish function
+    _In case you need to leverage the PULL model to integrate with Catchpoint, you can look at the example that leverages Catchpoint REST APIs in the Github repository_ [_here_](https://github.com/catchpoint/Integrations.GoogleCloudMonitoring)_. The catchpoint-rest-api.js has the code to leverage the Catchpoint performance API to pull data from Catchpoint. If you use this approach, you can skip the cloud function step up and go over to the Cloud Monitoring Set Up._
 
-```javascript
-/**
-Publishes a message to a Google Cloud Pub/Sub Topic.
-*/
+    1. HTTP triggers are used to invoke cloud functions with an HTTP request. Additional information is available [here](https://cloud.google.com/functions/docs/calling/http).  
+    The publish function gets triggered by a HTTP POST from Catchpoint. This function then publishes to the topic specified while deploying the subscriber.  
+    **The Publish function**  
 
-exports.catchpointPublish = async (req, res) => {
-    console.log(`Publishing message to topic ${topicName}.`);
-    const pubsub = new PubSub();
-    const topic = pubsub.topic(topicName);
-    const data = JSON.stringify(req.body);
-    const message = Buffer.from(data, 'utf8');
+        ```javascript
+        /**
+        Publishes a message to a Google Cloud Pub/Sub Topic.
+        */
 
-    try {
-        await topic.publish(message);
-        res.status(200).send(`Message published to topic ${topicName}.`);
-    } catch (err) {
-        console.error(err);
-        res.status(500).send(err);
-        return Promise.reject(err);
-    }
-};
-```
+        exports.catchpointPublish = async (req, res) => {
+            console.log(`Publishing message to topic ${topicName}.`);
+            const pubsub = new PubSub();
+            const topic = pubsub.topic(topicName);
+            const data = JSON.stringify(req.body);
+            const message = Buffer.from(data, 'utf8');
 
-##### Deploy publish function
+            try {
+                await topic.publish(message);
+                res.status(200).send(`Message published to topic ${topicName}.`);
+            } catch (err) {
+                console.error(err);
+                res.status(500).send(err);
+                return Promise.reject(err);
+            }
+        };
+        ```
 
-1. Run the below command  
+        **Deploy publish function**
 
-    ```sh
-    gcloud functions deploy catchpointPublish \
-        --trigger-http \
-        --runtime nodejs10 \
-        --trigger-http \
-        --allow-unauthenticated
-    ```
+        1. Run the below command  
 
-2. Copy the URL after the deploy is successful. This is needed to set up the Catchpoint Webhook in Step 6.1.
+        ```sh
+        gcloud functions deploy catchpointPublish \
+            --trigger-http \
+            --runtime nodejs10 \
+            --trigger-http \
+            --allow-unauthenticated
+        ```
 
-![sample-publish-function](sample-publish-function.png)
+        2. Copy the URL after the deploy is successful. This is needed to set up the Catchpoint Webhook in Step 6.1.
 
-1. Pub/Sub Trigger  
-Cloud Functions can be triggered by messages published to [Pub/Sub topics](https://cloud.google.com/pubsub/docs) in the same Cloud project as the function. More information on calling Pub/Sub Topics is available [here](https://cloud.google.com/functions/docs/calling/pubsub).  
+        ![sample-publish-function](sample-publish-function.png)
 
-###### The Subscribe function
+    2. Pub/Sub Trigger  
+    Cloud Functions can be triggered by messages published to [Pub/Sub topics](https://cloud.google.com/pubsub/docs) in the same Cloud project as the function. More information on calling Pub/Sub Topics is available [here](https://cloud.google.com/functions/docs/calling/pubsub).  
 
-The subscriber function subscribers to the topic to which we publish the Catchpoint data. It then feeds it to Stackdriver.
+        **The Subscribe function**
 
-```javascript
-/*
-Triggered from a message on Google Cloud Pub/Sub topic.
-*/
+        The subscriber function subscribers to the topic to which we publish the Catchpoint data. It then feeds it to Stackdriver.
 
-exports.catchpointSubscribe = (message) => {
-    const data = Buffer.from(message.data, 'base64').toString();
-    const catchpointData = JSON.parse(data);
-    postToGoogleMonitoring(catchpointData);
-};
-```
+        ```javascript
+        /*
+        Triggered from a message on Google Cloud Pub/Sub topic.
+        */
 
-##### Deploy Subscribe function
+        exports.catchpointSubscribe = (message) => {
+            const data = Buffer.from(message.data, 'base64').toString();
+            const catchpointData = JSON.parse(data);
+            postToGoogleMonitoring(catchpointData);
+        };
+        ```
 
-1. Run the below command  
-_Note: Either create the topic separately before deploying or alternatively specify it directly while deploying. If the topic is not created, this command automatically creates a new topic._  
+        **Deploy Subscribe function**
 
-    ```sh
-    gcloud functions deploy catchpointSubscribe
-        --trigger-topic catchpoint-webhook
-        --runtime nodejs10
-        --allow-unauthenticated
-    ```
+        1. Run the below command  
+        _Note: Either create the topic separately before deploying or alternatively specify it directly while deploying. If the topic is not created, this command automatically creates a new topic._  
 
-![sample-subscribe-function](sample-subscribe-function.png)
+        ```sh
+        gcloud functions deploy catchpointSubscribe
+            --trigger-topic catchpoint-webhook
+            --runtime nodejs10
+            --allow-unauthenticated
+        ```
 
-1. Set the TopicName environment variable using the same topic name you used to deploy the Subscribe function. Update the TopicName variable in the .env file at [https://github.com/catchpoint/Integrations.GoogleCloudMonitoring/blob/master/Stackdriver-Webhook/.env](https://github.com/catchpoint/Integrations.GoogleCloudMonitoring/blob/master/Stackdriver-Webhook/.env). Refer to [https://cloud.google.com/functions/docs/env-var](https://cloud.google.com/functions/docs/env-var) for information on how to set up environment variables.  
+        ![sample-subscribe-function](sample-subscribe-function.png)
 
-    ```sh
-    gcloud pubsub topics create <topic-name>
-    ```
+    3. Set the TopicName environment variable using the same topic name you used to deploy the Subscribe function. Update the TopicName variable in the .env file at [https://github.com/catchpoint/Integrations.GoogleCloudMonitoring/blob/master/Stackdriver-Webhook/.env](https://github.com/catchpoint/Integrations.GoogleCloudMonitoring/blob/master/Stackdriver-Webhook/.env). Refer to [https://cloud.google.com/functions/docs/env-var](https://cloud.google.com/functions/docs/env-var) for information on how to set up environment variables.  
 
-    The topic will be referenced in `index.js` as below
+        ```sh
+        gcloud pubsub topics create <topic-name>
+        ```
 
-    ```javascript
-    const topicName = process.env.TopicName;
-    ```
+        The topic will be referenced in `index.js` as below
+
+        ```javascript
+        const topicName = process.env.TopicName;
+        ```
 
 ##### Cloud Monitoring set up
 
